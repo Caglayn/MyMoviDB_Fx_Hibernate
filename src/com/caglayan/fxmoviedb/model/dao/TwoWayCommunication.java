@@ -6,10 +6,8 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketException;
 
-import com.caglayan.marathon.controller.ServerController;
-import com.caglayan.marathon.model.dto.CommunicationDto;
-import com.caglayan.marathon.utils.DBConnection;
-import com.caglayan.marathon.view.ViewUtils;
+import com.caglayan.fxmoviedb.model.dto.CommunicationDto;
+
 
 public class TwoWayCommunication {
 	private String ip;
@@ -39,43 +37,11 @@ public class TwoWayCommunication {
 			}
 
 		} catch (SocketException e) {
-			ViewUtils.printConnectionClosedThanks();
+			//printConnectionClosedThanks();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
 		return null;
-	}
-
-	public void startServerTwoWayCommunication() {
-		CommunicationDto requestObject = null;
-		long start = 0;
-		long end = 0;
-		while (true) {
-			CommunicationDto answerObject = null;
-			ViewUtils.showServerReady(this.port); // Prints screen to server ready
-			try (Socket socket = DBConnection.getInstance().getServerSocket(this.port).accept();
-					ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-					ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());) {
-				start = System.currentTimeMillis();
-				if ((requestObject = (CommunicationDto) objectInputStream.readObject()) != null) {
-					if (requestObject.getRequestId() == 99) {
-						ViewUtils.serverExiting();
-						objectOutputStream.writeObject(answerObject);
-						objectOutputStream.flush();
-						System.exit(0);
-					}
-					answerObject = ServerController.welcomeTheRequest(requestObject);
-				}
-
-				objectOutputStream.writeObject(answerObject); // Sending object
-				objectOutputStream.flush();
-				end = System.currentTimeMillis();
-				ViewUtils.serverPrintQueryTime(end - start);
-			} catch (IOException | ClassNotFoundException e) {
-				e.printStackTrace();
-
-			}
-		}
 	}
 }
