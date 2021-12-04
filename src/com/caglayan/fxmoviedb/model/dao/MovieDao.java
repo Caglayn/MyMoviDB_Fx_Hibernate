@@ -3,131 +3,104 @@ package com.caglayan.fxmoviedb.model.dao;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.nio.file.FileSystems;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.util.LinkedList;
+import java.util.HashMap;
 import java.util.StringTokenizer;
 
-import com.caglayan.marathon.model.dto.MovieDto;
-import com.caglayan.marathon.utils.GlobalizationInfo;
-import com.caglayan.marathon.view.ViewUtils;
+import com.caglayan.fxmoviedb.model.entity.MovieEntity;
+import com.caglayan.fxmoviedb.model.enums.EGenre;
+import com.caglayan.fxmoviedb.utils.PropertiesUtil;
 
-public class MovieDao implements IDAOImplements<MovieDto> {
-
-	private final String directory;
+public class MovieDao {
 
 	public MovieDao() {
 		super();
 	}
-
+	
 	/**
 	 * Reads movie.csv data from file and returns a LinkedList
 	 */
-	public LinkedList<MovieDto> readMovieDataFromFile() {
-		LinkedList<MovieDto> moviesList = new LinkedList<MovieDto>();
-		String path = directory + "\\files\\movies.csv";
-		File file = new File(path);
+	public HashMap<Long, MovieEntity> readMovieDataFromFile() {
+		HashMap<Long, MovieEntity> moviesList = new HashMap<Long, MovieEntity>();
+		File file = new File(PropertiesUtil.getInstance().getFilesPath()+"movies.csv");
 
 		try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
 			String lineReaded = "";
 			reader.readLine();
 			while ((lineReaded = reader.readLine()) != null) { // read movies.csv line by line
-				MovieDto temp = new MovieDto();
-				StringTokenizer lineTokenizer = new StringTokenizer(lineReaded, ","); // tokenize every line by ','
-				String title = "";
-				String genres = "";
-
-				if (lineTokenizer.hasMoreTokens())
-					temp.setId(Integer.valueOf(lineTokenizer.nextToken()));
-
-				while (lineTokenizer.hasMoreTokens()) {
-					String tempString = lineTokenizer.nextToken();
-
-					if (lineTokenizer.hasMoreTokens()) {
-						title = title + tempString;
-					} else {
-						genres = tempString;
-					}
-				}
-
-				temp.setTitle(title);
-
-				StringTokenizer genresTokenizer = new StringTokenizer(genres, "|");
-				while (genresTokenizer.hasMoreTokens()) {
-					temp.addGenre(genresTokenizer.nextToken());
-				}
-
-				moviesList.add(temp);
-				ViewUtils.printProgress(GlobalizationInfo.getInstance().getBundle().getString("readingFromMoviesFile"), 0, moviesList.size());
+				MovieEntity tempMovieEntity = parseMovieLine(lineReaded);
+				moviesList.put(tempMovieEntity.getMovieId(), tempMovieEntity);
 			}
-		} catch (
-
-		Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
 		return moviesList;
+	}
+	
+	private MovieEntity parseMovieLine(String lineReaded) {
+		MovieEntity tempMovieEntity = new MovieEntity();
+		StringTokenizer lineTokenizer = new StringTokenizer(lineReaded, ","); // tokenize every line by ','
+		String title = "";
+		String genres = "";
+
+		if (lineTokenizer.hasMoreTokens())
+			tempMovieEntity.setMovieId(Long.valueOf(lineTokenizer.nextToken()));
+
+		while (lineTokenizer.hasMoreTokens()) {
+			String tempString = lineTokenizer.nextToken();
+
+			if (lineTokenizer.hasMoreTokens()) {
+				title = title + tempString;
+			} else {
+				genres = tempString;
+			}
+		}
+
+		tempMovieEntity.setTitle(title);
+
+		parseGenres(tempMovieEntity, genres);
+
+		return tempMovieEntity;
+	}
+	
+	private void parseGenres(MovieEntity tempMovieEntity, String genres) {
+		StringTokenizer genresTokenizer = new StringTokenizer(genres, "|");
+		while (genresTokenizer.hasMoreTokens()) {
+			tempMovieEntity.addGenre(EGenre.byName(genresTokenizer.nextToken()));
+		}
 	}
 
 	/**
 	 * Reads links.csv data from file and returns a LinkedList
 	 */
-	public LinkedList<MovieDto> readLinkDataFromFile() {
-		LinkedList<MovieDto> moviesList = new LinkedList<MovieDto>();
-		String path = directory + "\\files\\links.csv";
+	public HashMap<Long, MovieEntity> readLinkDataFromFile(HashMap<Long, MovieEntity> moviesList) {
+		String path = PropertiesUtil.getInstance().getFilesPath() + "links.csv";
 		File file = new File(path);
 		try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
 			String lineReaded = "";
 			reader.readLine();
 			while ((lineReaded = reader.readLine()) != null) { // read links.csv line by line
-				MovieDto temp = new MovieDto();
-				StringTokenizer lineTokenizer = new StringTokenizer(lineReaded, ","); // tokenize every line by ','
-				if (lineTokenizer.hasMoreTokens())
-					temp.setId(Integer.valueOf(lineTokenizer.nextToken()));
-
-				if (lineTokenizer.hasMoreTokens())
-					temp.setImdb_id(Long.valueOf(lineTokenizer.nextToken()));
-
-				if (lineTokenizer.hasMoreTokens())
-					temp.setTmdb_id(Long.valueOf(lineTokenizer.nextToken()));
-
-				moviesList.add(temp);
-				ViewUtils.printProgress(GlobalizationInfo.getInstance().getBundle().getString("readingFromLinksFile"), 0, moviesList.size());
+				parseLinkLine(moviesList, lineReaded);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return moviesList;
 	}
-
-	public LinkedList<String> getGenresFromDB() {
-		LinkedList<String> genres = new LinkedList<String>();
-		try (Connection connection = getInterfaceConnection()) {
-			String sql = "SELECT DISTINCT genre FROM genres";
-			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(sql);
-
-			while (resultSet.next()) {
-				genres.add(resultSet.getString("genre"));
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
+	private void parseLinkLine(HashMap<Long, MovieEntity> moviesList, String lineReaded) {
+		MovieEntity tempMovieEntity = null;
+		StringTokenizer lineTokenizer = new StringTokenizer(lineReaded, ","); // tokenize every line by ','
+		if (lineTokenizer.hasMoreTokens()) {
+			Long movieId = Long.valueOf(lineTokenizer.nextToken());
+			tempMovieEntity = moviesList.get(movieId);
 		}
-		return genres;
+
+		if (lineTokenizer.hasMoreTokens())
+			tempMovieEntity.setImdbId(Long.valueOf(lineTokenizer.nextToken()));
+
+		if (lineTokenizer.hasMoreTokens())
+			tempMovieEntity.setTmdbId(Long.valueOf(lineTokenizer.nextToken()));
 	}
 
-	public void truncateAllTables() {
-		try (Connection connection = getInterfaceConnection()) {
-			String sql = "TRUNCATE TABLE movies RESTART IDENTITY CASCADE";
-			Statement statement = connection.createStatement();
-			statement.executeUpdate(sql);
-			ViewUtils.printAllTablesTruncated();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+	public void truncateAllTables() {}
 }

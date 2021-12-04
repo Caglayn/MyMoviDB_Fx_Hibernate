@@ -1,5 +1,6 @@
 package com.caglayan.fxmoviedb.model.entity;
 
+import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.Objects;
 
@@ -16,7 +17,8 @@ import javax.persistence.TemporalType;
 
 @Entity
 @Table(name = "ratings")
-public class RatingEntity {
+public class RatingEntity implements Serializable {
+	private static final long serialVersionUID = 1436507003890119032L;
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

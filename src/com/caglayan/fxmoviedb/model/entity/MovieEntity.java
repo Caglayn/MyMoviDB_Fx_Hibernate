@@ -6,7 +6,10 @@ import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -15,6 +18,9 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+
+import com.caglayan.fxmoviedb.model.enums.EGenre;
+
 import javax.persistence.JoinColumn;
 
 @Entity
@@ -33,9 +39,11 @@ public class MovieEntity implements Serializable {
 	@Column(name = "title")
 	private String title;
 
-	@ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
-	@JoinTable(name = "movie_genre", joinColumns = @JoinColumn(name = "movie_id", referencedColumnName = "movieId"), inverseJoinColumns = @JoinColumn(name = "genre_id"))
-	private Set<GenreEntity> genreSet = new HashSet<GenreEntity>();
+	@ElementCollection(targetClass = EGenre.class, fetch = FetchType.EAGER)
+	@JoinTable(name = "genre_table", joinColumns = @JoinColumn(referencedColumnName = "movieId"))
+	@Column(name = "genre")
+	@Enumerated(EnumType.STRING)
+	private Set<EGenre> genreSet = new HashSet<EGenre>();
 	
 	@Column(name = "imdb_id")
 	private long imdbId;
@@ -78,14 +86,6 @@ public class MovieEntity implements Serializable {
 		this.title = title;
 	}
 
-	public Set<GenreEntity> getGenreSet() {
-		return genreSet;
-	}
-
-	public void setGenreSet(Set<GenreEntity> genreSet) {
-		this.genreSet = genreSet;
-	}
-
 	public long getImdbId() {
 		return imdbId;
 	}
@@ -118,7 +118,7 @@ public class MovieEntity implements Serializable {
 		this.tags = tags;
 	}
 
-	public void addGenre(GenreEntity genre) {
+	public void addGenre(EGenre genre) {
 		this.genreSet.add(genre);
 	}
 	

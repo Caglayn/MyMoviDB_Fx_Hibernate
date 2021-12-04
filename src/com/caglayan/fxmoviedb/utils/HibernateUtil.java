@@ -3,6 +3,10 @@ package com.caglayan.fxmoviedb.utils;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 
+import com.caglayan.fxmoviedb.model.entity.MovieEntity;
+import com.caglayan.fxmoviedb.model.entity.RatingEntity;
+import com.caglayan.fxmoviedb.model.entity.TagEntity;
+
 public class HibernateUtil {
 	private static final SessionFactory sessionFactory = createSessionFactory();
 
@@ -11,8 +15,9 @@ public class HibernateUtil {
 			Configuration configuration = new Configuration();
 
 			// Entity classes
-
-			// composition - relations
+			configuration.addAnnotatedClass(MovieEntity.class);
+			configuration.addAnnotatedClass(RatingEntity.class);
+			configuration.addAnnotatedClass(TagEntity.class);
 
 			SessionFactory factory = configuration.configure("hibernate.cfg.xml").buildSessionFactory();
 			return factory;
