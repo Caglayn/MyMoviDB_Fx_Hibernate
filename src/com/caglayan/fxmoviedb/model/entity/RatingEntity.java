@@ -14,6 +14,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 
 @Entity
 @Table(name = "ratings")
@@ -38,6 +39,9 @@ public class RatingEntity implements Serializable {
 	@ManyToOne
 	@JoinColumn(name = "movieId")
 	private MovieEntity movie;
+	
+	@Transient
+	private Long movieId;
 
 	public RatingEntity() {
 		super();
@@ -81,6 +85,14 @@ public class RatingEntity implements Serializable {
 
 	public void setMovie(MovieEntity movie) {
 		this.movie = movie;
+	}
+
+	public Long getMovieId() {
+		return movieId;
+	}
+
+	public void setMovieId(Long movieId) {
+		this.movieId = movieId;
 	}
 
 	@Override
